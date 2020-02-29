@@ -1,5 +1,5 @@
 """
-WSGI config for AlphaProject project.
+WSGI config for AlphaProject projects.
 
 It exposes the WSGI callable as a module-level variable named ``application``.
 
