@@ -11,8 +11,7 @@ from rest_framework.decorators import api_view, permission_classes, action
 
 # Create your views here.
 class ImageListView(APIView):
-    permission_classes = (IsAuthenticated, )
-
+    # permission_classes = (IsAuthenticated, )
     def get(self, request):
         return HttpResponse("Get images")
 
@@ -22,7 +21,7 @@ class ImageListView(APIView):
     def put(self, request):
         return HttpResponse("Put Images")
 
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
+# @api_view(['GET'])
+# @permission_classes([IsAuthenticated])
 def predict(request):
     return HttpResponse("Image predict")
