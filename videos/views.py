@@ -115,7 +115,7 @@ class VideoListView(APIView):
             cv2.waitKey(1)
         vc.release()
 
-        unclassifiedImages = Image.objects.filter(type="unknown")
+        unclassifiedImages = Image.objects.filter(type="unknown", project=project, video=video)
         json_list = []
         for image in unclassifiedImages:
             json_dict = {}
