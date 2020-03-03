@@ -42,11 +42,11 @@ class ModelListView(APIView):
     def get(self, request):
         user_id = request.GET.get('user_id', '')
         project_title = request.GET.get('project_title', '')
-
+        user = User.objects.get(id=user_id)
+        project = Project.objects.get(title=project_title)
         # https://my.oschina.net/esdn/blog/834943
         models = Model.objects.filter(
-            (Q(user=User.objects.get(id=user_id)) &
-             Q(project=Project.objects.get(title=project_title))) | Q(isPublic=True)
+            ((Q(user=user) & Q(project=project)) | Q(isPublic=True)) & Q(type=project.type)
         )
 
         serializer = ModelSerializer(models, many=True)

@@ -27,6 +27,7 @@ from .serializers import VideoSerializer
 from rest_framework.parsers import JSONParser
 from django.http import HttpResponse, JsonResponse
 from projects.models import Project
+from models.models import Model
 
 import json
 import datetime
@@ -52,22 +53,19 @@ class VideoListView(APIView):
 
     def post(self, request):
         print("POST received - return done")
-        print(request)
+
+        # Get all the param
         user_id = request.GET.get('user_id', '')
         project_title = request.GET.get('project_title', '')
-        print(user_id)
-        print(project_title)
+        model_title = request.data['model']
+        timeF = int(request.data['interval'])
+        uploaded_file = request.data['file']
 
-        parser_classes = (MultiPartParser, FormParser, FileUploadParser)
-        now = datetime.datetime.now()
-        timestamp = now.strftime("%Y-%m-%d-%H:%M:%S") + "-"
-        print(timestamp)
         user = User.objects.get(id=user_id)
-        print(user)
         project = Project.objects.get(title=project_title, user=user)
-        print(project)
-        uploaded_file = request.FILES['video']
-        print(uploaded_file)
+        model = Model.objects.filter(title=model_title)
+        timestamp = datetime.datetime.now().strftime("%Y-%m-%d-%H:%M:%S") + "-"
+
 
         locationOfVideos = settings.MEDIA_ROOT + project.location + "videos/"
         locationOfFrames = settings.MEDIA_ROOT + project.location + "images/unknown/"
@@ -95,7 +93,6 @@ class VideoListView(APIView):
             print('openerror!')
             rval = False
 
-        timeF = 100  # 视频帧计数间隔次数
         while rval:
             rval, frame = vc.read()
             if c % timeF == 0:
