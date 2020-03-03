@@ -62,12 +62,13 @@ class ModelListView(APIView):
 
         # save to database:
         timestamp = datetime.datetime.now().strftime("%Y-%m-%d-%H:%M:%S") + "-"
-        model = Model(title=timestamp+request.data['title'],
+        model = Model(title=timestamp+request.data['title']+".h5",
                       description=request.data['description'],
                       type=request.data['type'],
                       isPublic=True,
-                      location=project.location + "models/"+timestamp+request.data['title'],
-                      url=settings.MEDIA_URL_DATADASE + project.location + "models/" + timestamp + request.data['title'],
+                      location=project.location + "models/"+timestamp+request.data['title']+".h5",
+                      label_location=project.location + "models/"+timestamp+request.data['title']+".txt",
+                      url=settings.MEDIA_URL_DATADASE + project.location + "models/" + timestamp + request.data['title']+".h5",
                       user=user,
                       project=project)
         model.save()

@@ -1,8 +1,7 @@
 from django.urls import path
-from . import views
-from .views import ImageListView
+from .views import ImageListView, ImagePredict
 
 urlpatterns = [
-    path('', views.ImageListView.as_view(), name="imageList"),
-    path('predict', views.predict),
+    path('', ImageListView.as_view(), name="imageList"),
+    path('predict/', ImagePredict.as_view(), name="imagePredict"),
 ]
