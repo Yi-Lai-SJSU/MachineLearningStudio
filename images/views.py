@@ -33,6 +33,8 @@ class ImageListView(APIView):
         user = User.objects.get(id=user_id)
         project = Project.objects.get(title=project_title, user=user)
 
+
+:
         label = request.data['type']
         uploaded_files = request.FILES.getlist('files')
         print(label)
@@ -66,8 +68,14 @@ class ImageListView(APIView):
         return HttpResponse("Post Images")
 
     def put(self, request):
+        image_id = request.GET.get('image_id', '')
+        image_type = request.GET.get('type', '')
+        print(image_id)
+        print(image_type)
+        image = MyImage.objects.get(id=image_id)
+        image.type = image_type
+        image.save()
         return HttpResponse("Put Images")
-
 
 # @api_view(['GET'])
 # @permission_classes([IsAuthenticated])
@@ -75,19 +83,20 @@ class ImagePredict(APIView):
     def post(self, request):
         model_title = request.data['model']
         uploaded_files = request.FILES.getlist('files')
-        print("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%")
+        user_id = request.GET.get('user_id', '')
+        project_title = request.GET.get('project_title', '')
+        print("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
+        print(user_id)
+        print(project_title)
+        user = User.objects.get(id=user_id)
+        project = Project.objects.get(title=project_title)
         print(uploaded_files)
         timestamp = datetime.datetime.now().strftime("%Y-%m-%d-%H:%M:%S") + "-"
         print(timestamp)
 
-        # Get user, project and model
-        # user = User.objects.get(id=user_id)
-        # project = Project.objects.get(title=project_title, user=user)
         # https://stackoverflow.com/questions/13821866/queryset-object-has-no-attribute-name
         # model = Model.objects.filter(title=model_title) return a collection
         model = Model.objects.get(title=model_title)
-        project = model.project
-        user = model.user
         model_path = settings.MEDIA_ROOT + model.location
 
         # https://github.com/qubvel/efficientnet/issues/62 to fix ValueError: Unknown activation function:swish
