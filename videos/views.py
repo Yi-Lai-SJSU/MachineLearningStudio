@@ -1,43 +1,24 @@
-from django.http import HttpResponse
-from django.views import View
-from django.shortcuts import render
+from .models import Video
+from django.contrib.auth.models import User
+from projects.models import Project
+import cv2
+from images.views import predictLabel
+from images.serializers import ImageSerializer
 from django.core.files.storage import FileSystemStorage
 from django.conf import settings
-from django.contrib.auth.models import User
-from projects.models import Project
-from .models import Video
-from images.models import Image
-from rest_framework import viewsets
-from django.core import serializers
-from rest_framework.parsers import FileUploadParser
-from rest_framework.parsers import MultiPartParser, FormParser
-from django.contrib.auth import get_user_model
-from django.conf import settings
-
-from django.shortcuts import render
-from django.http import HttpResponse
-from rest_framework.authentication import TokenAuthentication
 from rest_framework.views import APIView
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.decorators import api_view, permission_classes, action
-from .models import Video
-from rest_framework.authtoken.models import Token
-from django.contrib.auth.models import User
 from .serializers import VideoSerializer
-from rest_framework.parsers import JSONParser
 from django.http import HttpResponse, JsonResponse
-from projects.models import Project
 from models.models import Model
-
-import json
+from images.models import Image as MyImage
+import tensorflow as tf
+import os
 import datetime
-import time
-import cv2
+
 
 # Create your views here.
 class VideoListView(APIView):
     # permission_classes = (IsAuthenticated, )
-
     def get(self, request):
         user_id = request.GET.get('user_id', '')
         project_title = request.GET.get('project_title', '')
@@ -63,9 +44,8 @@ class VideoListView(APIView):
 
         user = User.objects.get(id=user_id)
         project = Project.objects.get(title=project_title, user=user)
-        model = Model.objects.filter(title=model_title)
+        model = Model.objects.get(title=model_title)
         timestamp = datetime.datetime.now().strftime("%Y-%m-%d-%H:%M:%S") + "-"
-
 
         locationOfVideos = settings.MEDIA_ROOT + project.location + "videos/"
         locationOfFrames = settings.MEDIA_ROOT + project.location + "images/unknown/"
@@ -93,37 +73,43 @@ class VideoListView(APIView):
             print('openerror!')
             rval = False
 
+        model_path = settings.MEDIA_ROOT + model.location
+        keras_model = tf.keras.models.load_model(model_path)
+        label_path = settings.MEDIA_ROOT + model.label_location
+        print(model_path)
         while rval:
             rval, frame = vc.read()
             if c % timeF == 0:
-                # print(2)
-                cv2.imwrite(outputFile + timestamp + str(int(c / timeF)) + '.jpg', frame)
-                image = Image(title=timestamp + str(int(c / timeF)) + '.jpg',
-                              location=project.location + "images/unknown/" + timestamp + str(int(c / timeF)) + '.jpg',
-                              url=settings.MEDIA_URL_DATADASE + project.location + "images/unknown/" + timestamp + str(int(c / timeF)) + '.jpg',
-                              description="default",
-                              type="unknown",
-                              user=user,
-                              project=project,
-                              video=video,
-                              isTrain=True)
-                image.save()
+                print("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
+                # Predict the class of the frame
+                predicted_label = predictLabel(frame, keras_model, label_path, True)
+                print(predicted_label)
+                print("LOGLOGLOGLOGLOGLOGLOGLOGLOGLOGLOGLOGLOGLOGLOGLOGLOGLOGLOGLOGLOGLOGLOGLOGLOGLOGLOGLOG")
+
+                # Get the folder path to save the Frame, if not exited, create a new folder
+                image_folder = settings.MEDIA_ROOT + project.location + "images/" + predicted_label + "/"
+                if not os.path.exists(image_folder):
+                    os.makedirs(image_folder)
+
+                # Save the frame to the folder
+                image_title = timestamp + str(int(c / timeF)) + '.jpg'
+                image_path = image_folder + image_title
+                cv2.imwrite(image_path, frame)
+
+                # Save to the Image database
+                new_image = MyImage(title=image_title,
+                                    location=project.location + "images/" + predicted_label + "/" + image_title,
+                                    url=settings.MEDIA_URL_DATADASE + project.location + "images/" + predicted_label + "/" + image_title,
+                                    description="default",
+                                    type=predicted_label,
+                                    user=user,
+                                    project=project,
+                                    isTrain=True)
+                new_image.save()
             c += 1
             cv2.waitKey(1)
         vc.release()
 
-        unclassifiedImages = Image.objects.filter(type="unknown", project=project, video=video)
-        json_list = []
-        for image in unclassifiedImages:
-            json_dict = {}
-            json_dict['id'] = image.id
-            json_dict['title'] = image.title
-            json_dict['url'] = image.url
-            json_dict['description'] = image.description
-            json_list.append(json_dict)
-        return HttpResponse(json.dumps(json_list), content_type="application/json")
-
-# @api_view(['GET'])
-# @permission_classes([IsAuthenticated])
-# def predict(request):
-#     return HttpResponse("Image predict")
+        predictedImage = MyImage.objects.filter(title__startswith=timestamp)
+        serializer = ImageSerializer(predictedImage, many=True)
+        return JsonResponse(serializer.data, safe=False)
