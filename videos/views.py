@@ -77,6 +77,7 @@ class VideoListView(APIView):
         keras_model = tf.keras.models.load_model(model_path)
         label_path = settings.MEDIA_ROOT + model.label_location
         print(model_path)
+        
         while rval:
             rval, frame = vc.read()
             if c % timeF == 0:

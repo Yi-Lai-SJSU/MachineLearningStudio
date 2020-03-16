@@ -28,11 +28,13 @@ from rest_framework.parsers import JSONParser
 from django.http import HttpResponse, JsonResponse
 from projects.models import Project
 from django.db.models import Q
+from celery_tasks.tasks import train_mode
 
 import json
 import datetime
 import time
 import cv2
+import os
 
 
 # Create your views here.
@@ -43,7 +45,8 @@ class ModelListView(APIView):
         user_id = request.GET.get('user_id', '')
         project_title = request.GET.get('project_title', '')
         user = User.objects.get(id=user_id)
-        project = Project.objects.get(title=project_title)
+        project = Project.objects.get(user=user, title=project_title)
+
         # https://my.oschina.net/esdn/blog/834943
         models = Model.objects.filter(
             ((Q(user=user) & Q(project=project)) | Q(isPublic=True)) & Q(type=project.type)
@@ -52,31 +55,47 @@ class ModelListView(APIView):
         serializer = ModelSerializer(models, many=True)
         return JsonResponse(serializer.data, safe=False)
 
+    def put(self, request):
+        print("receive training model....")
+        user_id = request.GET.get('user_id', '')
+        project_title = request.GET.get('project_title', '')
+        # user = User.objects.get(id=user_id)
+        # project = Project.objects.get(user=user, title=project_title)
+        train_mode.delay(user_id, project_title)
+        return HttpResponse("training Models")
+
+
     def post(self, request):
         print("POST received - return done")
-        print(request)
+        uploaded_files = request.FILES.getlist('files')
+        print("*************************************************************************")
         user_id = request.GET.get('user_id', '')
         project_title = request.GET.get('project_title', '')
         user = User.objects.get(id=user_id)
-        project = Project.objects.get(title=project_title)
+        project = Project.objects.get(user=user, title=project_title)
 
         # save to database:
         timestamp = datetime.datetime.now().strftime("%Y-%m-%d-%H:%M:%S") + "-"
-        model = Model(title=timestamp+request.data['title']+".h5",
+        fileName = str(user.id) + "+" + project.title + "+" + timestamp + request.data['title']
+        print(fileName)
+
+        model = Model(title=fileName+".h5",
                       description=request.data['description'],
                       type=request.data['type'],
                       isPublic=True,
-                      location=project.location + "models/"+timestamp+request.data['title']+".h5",
-                      label_location=project.location + "models/"+timestamp+request.data['title']+".txt",
-                      url=settings.MEDIA_URL_DATADASE + project.location + "models/" + timestamp + request.data['title']+".h5",
+                      location=project.location + "models/"+fileName+".h5",
+                      label_location=project.location + "models/"+fileName+".txt",
+                      url=settings.MEDIA_URL_DATADASE + project.location + "models/" + fileName + ".h5",
                       user=user,
                       project=project)
         model.save()
 
         # save to file system
-        locationOfModels = settings.MEDIA_ROOT + project.location + "models/"
-        fs = FileSystemStorage(location=locationOfModels)
-        fs.save(timestamp+request.data['title']+".h5", request.data['file'])
+
+        locationOfModel = settings.MEDIA_ROOT + project.location + "models/"
+        fs = FileSystemStorage(location=locationOfModel)
+        fs.save(fileName+".h5",  uploaded_files[0])
+        fs.save(fileName+".txt", uploaded_files[1])
         print("**********************")
         return HttpResponse("Upload Models")
 

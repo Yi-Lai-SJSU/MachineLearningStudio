@@ -18,11 +18,12 @@ import datetime
 # Create your views here.
 class ImageListView(APIView):
     # permission_classes = (IsAuthenticated, )
+
     def get(self, request):
         user_id = request.GET.get('user_id', '')
         project_title = request.GET.get('project_title', '')
         user = User.objects.get(id=user_id)
-        project = Project.objects.get(title=project_title)
+        project = Project.objects.get(user=user, title=project_title)
         images = MyImage.objects.filter(user=user, project=project)
         serializer = ImageSerializer(images, many=True)
         return JsonResponse(serializer.data, safe=False)
@@ -32,9 +33,6 @@ class ImageListView(APIView):
         project_title = request.GET.get('project_title', '')
         user = User.objects.get(id=user_id)
         project = Project.objects.get(title=project_title, user=user)
-
-
-:
         label = request.data['type']
         uploaded_files = request.FILES.getlist('files')
         print(label)
@@ -74,7 +72,23 @@ class ImageListView(APIView):
         print(image_type)
         image = MyImage.objects.get(id=image_id)
         image.type = image_type
+        print(image.location)
+
+        image_folder = settings.MEDIA_ROOT + image.project.location + "images/" + image_type + "/"
+        print("&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
+        print(image_folder)
+        print(settings.MEDIA_ROOT+image.location)
+        print("&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
+
+        if not os.path.exists(image_folder):
+            os.makedirs(image_folder)
+
+        os.rename(settings.MEDIA_ROOT+image.location, image_folder + image.title)
+        image.location = image.project.location + "images/" + image_type + "/" + image.title
+        image.url = settings.MEDIA_URL_DATADASE + image.project.location + "images/" + image_type + "/" + image.title
         image.save()
+        print(image.location)
+        print(image.url)
         return HttpResponse("Put Images")
 
 # @api_view(['GET'])
@@ -89,7 +103,7 @@ class ImagePredict(APIView):
         print(user_id)
         print(project_title)
         user = User.objects.get(id=user_id)
-        project = Project.objects.get(title=project_title)
+        project = Project.objects.get(user=user, title=project_title)
         print(uploaded_files)
         timestamp = datetime.datetime.now().strftime("%Y-%m-%d-%H:%M:%S") + "-"
         print(timestamp)

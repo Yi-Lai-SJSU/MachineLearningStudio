@@ -1,1 +1,0 @@
-{'butterflies': 0, 'chickens': 1, 'elephants': 2, 'horses': 3, 'spiders': 4, 'squirells': 5}
