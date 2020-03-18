@@ -59,9 +59,25 @@ class ModelListView(APIView):
         print("receive training model....")
         user_id = request.GET.get('user_id', '')
         project_title = request.GET.get('project_title', '')
+        type = request.data['type']
+        print(type)
+        uploaded_files = request.FILES.getlist('files')
+
+        locationOfModel = "/code/celery_tasks/"
+        print(locationOfModel)
+        fs = FileSystemStorage(location=locationOfModel)
+        print("************************************************")
+        print(uploaded_files[0])
+        fs.delete("customized.py")
+        fs.save("customized.py", uploaded_files[0])
+        print("*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*")
+        time.sleep(10)
+        print("*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*")
         # user = User.objects.get(id=user_id)
         # project = Project.objects.get(user=user, title=project_title)
-        train_mode.delay(user_id, project_title)
+        print("************************************************")
+        train_mode.delay((user_id, project_title, type),)
+        print("************************************************")
         return HttpResponse("training Models")
 
 

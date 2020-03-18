@@ -120,6 +120,13 @@ class ImagePredict(APIView):
         for unPredictedImage in uploaded_files:
             # Get the predict result:
             label_path = settings.MEDIA_ROOT + model.label_location
+            print("***********************************************")
+            print(label_path)
+            print(model_path)
+            fr = open(label_path)
+            dic = eval(fr.read())
+            print(dic)
+
             label = predictLabel(unPredictedImage, keras_model, label_path, False)
 
             # Save the image to file-system according to the label:
@@ -161,6 +168,7 @@ def predictLabel(unpredictedImage, model, label, imageFormatIsNP):
     result = model.predict(test_image)
     print(result)
     classIndex = np.argmax(result)
+    print("^&^&^&^&^&^^^^^^^^^^^^^^^^^&^&^&^&^&^&^&^&^&^&^&^&^&^&^&^&^&^&^&")
     fr = open(label)
     dic = eval(fr.read())
     fr.close()

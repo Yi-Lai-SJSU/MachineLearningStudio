@@ -25,7 +25,7 @@ SECRET_KEY = 'vvj)^ktx7^xu+onmf!w%-1l94+c#r!7718z@3ua*#g103$4aml'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["*"]
 
 
 # Application definition
@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'videos',
     'projects',
     'models',
+    'celery',
 ]
 
 MIDDLEWARE = [
@@ -141,3 +142,6 @@ STATIC_URL = '/static/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media/')
 MEDIA_URL = 'media/'
 MEDIA_URL_DATADASE = 'http://localhost:8000/media/'
+
+CELERY_BROKER_URL = 'redis://redis:6379/0'
+CELERY_RESULT_BACKEND = 'redis://redis:6379/0'

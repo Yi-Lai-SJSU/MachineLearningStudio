@@ -1,0 +1,1 @@
+{'butterflies': 0, 'cat': 1, 'chicken': 2, 'cows': 3, 'sss': 4, 'strange': 5, 'strange1': 6, 'unknown': 7}
