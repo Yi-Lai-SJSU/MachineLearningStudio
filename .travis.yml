@@ -5,8 +5,7 @@ services:
 before_install:
 
 script:
-  - docker-compose up --build --force-recreate
-  - docker-compose down
+  - docker-compose --build --force-recreate
 
 after_success:
   - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
