@@ -5,7 +5,7 @@ services:
 before_install:
 
 script:
-  - docker-compose --build --force-recreate
+  - docker-compose build yilaisjsu/machinelearningstudio
 
 after_success:
   - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
